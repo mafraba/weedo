@@ -35,7 +35,8 @@ OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
 
 # Object Files
 OBJECTFILES= \
-	${OBJECTDIR}/main.o
+	${OBJECTDIR}/main.o \
+	${OBJECTDIR}/gabor2d.o
 
 
 # C Compiler Flags
@@ -66,6 +67,11 @@ ${OBJECTDIR}/main.o: main.c
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} $@.d
 	$(COMPILE.c) `pkg-config --cflags opencv` -std=c99   -MMD -MP -MF $@.d -o ${OBJECTDIR}/main.o main.c
+
+${OBJECTDIR}/gabor2d.o: gabor2d.c 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} $@.d
+	$(COMPILE.c) `pkg-config --cflags opencv` -std=c99   -MMD -MP -MF $@.d -o ${OBJECTDIR}/gabor2d.o gabor2d.c
 
 # Subprojects
 .build-subprojects:

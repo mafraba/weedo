@@ -11,13 +11,15 @@
 extern "C" {
 #endif
 
+#define PI		3.14159265358979323846	/* pi */
+
     /*
      * 
      */
     CvMat* create_gabor_filter_2d(
-            double spatial_freq,
+            float spatial_freq,
             int bandwith,
-            double orientation);
+            float orientation);
 
 
 #ifdef	__cplusplus
