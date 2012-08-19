@@ -36,7 +36,7 @@ CvMat* create_gabor_filter_2d(float spatial_freq, int bandwidth, float orientati
             max_s = (max_s > sinusoid_component) ? max_s : sinusoid_component;
             min_g = (min_g < gaussian_component) ? min_g : gaussian_component;
             min_s = (min_s < sinusoid_component) ? min_s : sinusoid_component;
-            *ptr = (gaussian_component * sinusoid_component + 1) / 2;
+            *ptr = gaussian_component * sinusoid_component;
             ptr++;
         }
     }
