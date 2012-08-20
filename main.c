@@ -11,7 +11,6 @@
 #define PATH "pics/PTOA0124.png"
 
 #define ORIGINAL_IMAGE_WINDOW_NAME "Original image"
-#define FILTER_WINDOW_NAME "Filter (resized)"
 #define RESULT_WINDOW_NAME "Filtered image"
 #define REDF_WINDOW_NAME "Filtered image (red channel)"
 #define BLUEF_WINDOW_NAME "Filtered image (blue channel)"
@@ -25,25 +24,26 @@ void show(char* name, CvArr* img)
 
 int main(int argc, char** argv)
 {
+    int bandwidths[1] = {8};
+    float orientations[4] = {0, PI / 2, PI / 4, -PI / 4};
+    float spatial_frequencies = {1, 2, 3, 4};
+
     // Load and display original image
     IplImage* img = cvLoadImage(PATH, CV_LOAD_IMAGE_UNCHANGED);
     show(ORIGINAL_IMAGE_WINDOW_NAME, img);
 
-    // Generate 2D gabor filter
-    CvMat* gabor = create_gabor_filter_2d(2, 8, PI/3);
-
-    // Display the filter
-    IplImage *filter_display = cvCreateImage(cvSize(200, 200), IPL_DEPTH_32F, 1);
-    //cvResize(gabor, filter_display, 2);
-    //cvConvertScale(filter_display, filter_display, 0.5, 0.5);
-    show(FILTER_WINDOW_NAME, gabor);
+    // Generate a Gabor filter bank
+    FilterBank filter_bank;
+    generate_gabor_filter_bank(&filter_bank,
+                               spatial_frequencies,
+                               orientations,
+                               bandwidths);
 
     // Apply the filter to the image
     IplImage *filtered = cvCloneImage(img);
     cvFilter2D(img, filtered, gabor, cvPoint(-1, -1));
-    // Normalize and display the results
-    //cvNormalize(filtered, filtered, 0, 255, CV_MINMAX, NULL);
     show(RESULT_WINDOW_NAME, filtered);
+
     // Show also each channel separately
     IplImage *ch1 = cvCreateImage(cvGetSize(img), img->depth, 1);
     IplImage *ch2 = cvCreateImage(cvGetSize(img), img->depth, 1);

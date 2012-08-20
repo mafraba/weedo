@@ -4,7 +4,7 @@
 
 float gaussian(float std_deviation, int x, int y)
 {
-    return exp(-1*(x * x + y * y) / (std_deviation * std_deviation));
+    return exp(-1 * (x * x + y * y) / (std_deviation * std_deviation));
 }
 
 float sinusoid(float wave_length, float orientation, int x, int y)
@@ -45,4 +45,43 @@ CvMat* create_gabor_filter_2d(float spatial_freq, int bandwidth, float orientati
     printf("Mins: %f %f\n", min_g, min_s);
 
     return mat;
+}
+
+/*
+ */
+void generate_gabor_filter_bank(
+                                FilterBank *bank,
+                                unsigned int n_freqs,
+                                float *spatial_frequencies,
+                                unsigned int n_orientations,
+                                float *orientations,
+                                unsigned int n_bands,
+                                unsigned int *bandwidths)
+{
+    // Assuming 'bank' is pre-allocated
+    bank->size = n_freqs * n_orientations * n_bands;
+
+    // Create filters, one by one
+    // Iterating on frequencies
+    for (int i=0; i<n_freqs; i++)
+    {
+        float frq = spatial_frequencies[i];
+        // Now for each frequency, iterating on orientations
+        for (int j=0; j<n_orientations; j++)
+        {
+            float orn = orientations[j];
+            // And finally on bandwidths
+            for (int k=0; k<n_bands; k++)
+            {
+                unsigned int bw = bandwidths[k];
+                ********************************
+                ********************************
+                ********************************
+                ********************************
+                ********************************
+                ********************************
+                ********************************
+            }
+        }
+    }
 }
