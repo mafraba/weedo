@@ -37,6 +37,7 @@ extern "C" {
             float *spatial_frequencies,
             unsigned int n_orientations,
             float *orientations,
+            unsigned int n_bandwidths,
             unsigned int *bandwidths);
 
 

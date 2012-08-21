@@ -15,14 +15,11 @@ float sinusoid(float wave_length, float orientation, int x, int y)
 /*
  * 
  */
-CvMat* create_gabor_filter_2d(float spatial_freq, int bandwidth, float orientation)
+CvMat* create_gabor_filter_2d(float spatial_freq, unsigned int bandwidth, float orientation)
 {
     // The filter will be a square matrix of NxN, where N = 2*bandwidth+1
     int dim = 2 * bandwidth + 1;
     CvMat* mat = cvCreateMat(dim, dim, CV_32FC1);
-
-    float max_g = 0, max_s = 0;
-    float min_g = 0, min_s = 0;
 
     // 
     for (int row = 0; row < mat->rows; row++)
@@ -32,17 +29,10 @@ CvMat* create_gabor_filter_2d(float spatial_freq, int bandwidth, float orientati
         {
             float gaussian_component = gaussian(0.65f * bandwidth, row - bandwidth, col - bandwidth);
             float sinusoid_component = sinusoid(spatial_freq / bandwidth, orientation, row - bandwidth, col - bandwidth);
-            max_g = (max_g > gaussian_component) ? max_g : gaussian_component;
-            max_s = (max_s > sinusoid_component) ? max_s : sinusoid_component;
-            min_g = (min_g < gaussian_component) ? min_g : gaussian_component;
-            min_s = (min_s < sinusoid_component) ? min_s : sinusoid_component;
             *ptr = gaussian_component * sinusoid_component;
             ptr++;
         }
     }
-
-    printf("Maxs: %f %f\n", max_g, max_s);
-    printf("Mins: %f %f\n", min_g, min_s);
 
     return mat;
 }
@@ -61,26 +51,24 @@ void generate_gabor_filter_bank(
     // Assuming 'bank' is pre-allocated
     bank->size = n_freqs * n_orientations * n_bands;
 
-    // Create filters, one by one
-    // Iterating on frequencies
-    for (int i=0; i<n_freqs; i++)
+    // Allocate array of pointers to filters
+    bank->filters = malloc(bank->size * sizeof (CvArr*));
+
+    // Create filters, one by one...
+    // ... iterating on frequencies
+    int f = 0;
+    for (int i = 0; i < n_freqs; i++)
     {
         float frq = spatial_frequencies[i];
-        // Now for each frequency, iterating on orientations
-        for (int j=0; j<n_orientations; j++)
+        // ...now for each frequency, iterating on orientations
+        for (int j = 0; j < n_orientations; j++)
         {
             float orn = orientations[j];
-            // And finally on bandwidths
-            for (int k=0; k<n_bands; k++)
+            // ...and finally on bandwidths
+            for (int k = 0; k < n_bands; k++)
             {
                 unsigned int bw = bandwidths[k];
-                ********************************
-                ********************************
-                ********************************
-                ********************************
-                ********************************
-                ********************************
-                ********************************
+                bank->filters[f] = create_gabor_filter_2d(frq, bw, orn);
             }
         }
     }
