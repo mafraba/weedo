@@ -52,7 +52,7 @@ void generate_gabor_filter_bank(
     bank->size = n_freqs * n_orientations * n_bands;
 
     // Allocate array of pointers to filters
-    bank->filters = malloc(bank->size * sizeof (CvArr*));
+    bank->filters = malloc(bank->size * sizeof (CvMat*));
 
     // Create filters, one by one...
     // ... iterating on frequencies
@@ -71,5 +71,27 @@ void generate_gabor_filter_bank(
                 bank->filters[f] = create_gabor_filter_2d(frq, bw, orn);
             }
         }
+    }
+}
+
+void apply_filter_bank(
+                       FilterBank *bank,
+                       CvMat *source,
+                       CvMat **outputs
+                       )
+{
+    printf("Source: %dx%d / %d\n", source->rows, source->cols, source->type);
+    
+    // Iterate over the filters...
+    for (int fidx = 0; fidx < bank->size; fidx++)
+    {
+        // ...taking each one
+        CvMat *f = bank->filters[fidx];
+        // applying it to the source matrix
+        CvMat *out = cvCreateMat(source->rows, source->cols, source->type);
+        //cvFilter2D(source, out, f, cvPoint(-1, -1));
+        printf("Filter %d: %dx%d / %d\n", fidx, f->rows, f->cols, f->type);
+        // and saving the result in the output array
+        outputs[fidx] = out;
     }
 }

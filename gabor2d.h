@@ -41,6 +41,18 @@ extern "C" {
             unsigned int *bandwidths);
 
 
+    /*
+     * Apply a filter bank to a single-channel matrix.
+     * 
+     * The result set is an array of matrixes, one per filter in the bank, same
+     * dimensions as the original.
+     */
+    void apply_filter_bank(
+            FilterBank *bank,
+            CvMat *source,
+            CvMat **outputs
+            );
+
 #ifdef	__cplusplus
 }
 #endif

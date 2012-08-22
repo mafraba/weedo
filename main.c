@@ -29,37 +29,35 @@ int main(int argc, char** argv)
     float spatial_frequencies[4] = {1, 2, 3, 4};
 
     // Load and display original image
-    IplImage* img = cvLoadImage(PATH, CV_LOAD_IMAGE_UNCHANGED);
+    puts ("Loading image...");
+    IplImage* img = cvLoadImage(PATH, CV_LOAD_IMAGE_COLOR);
     show(ORIGINAL_IMAGE_WINDOW_NAME, img);
 
     // Generate a Gabor filter bank
+    puts ("Generating Gabor filter bank...");
     FilterBank filter_bank;
     generate_gabor_filter_bank(&filter_bank,
-                               4,
-                               spatial_frequencies,
-                               4,
-                               orientations,
-                               1,
-                               bandwidths);
+                               4, spatial_frequencies,
+                               4, orientations,
+                               1, bandwidths);
 
-    // Apply the filter to the image
-    /*
-    IplImage *filtered = cvCloneImage(img);
-    cvFilter2D(img, filtered, gabor, cvPoint(-1, -1));
-    show(RESULT_WINDOW_NAME, filtered);
-
-    // Show also each channel separately
+    // Separate each channel
+    puts("Separating channels...");
     IplImage *ch1 = cvCreateImage(cvGetSize(img), img->depth, 1);
     IplImage *ch2 = cvCreateImage(cvGetSize(img), img->depth, 1);
     IplImage *ch3 = cvCreateImage(cvGetSize(img), img->depth, 1);
-    cvSplit(filtered, ch1, ch2, ch3, NULL);
-    show(REDF_WINDOW_NAME, ch1);
-    show(GREENF_WINDOW_NAME, ch2);
-    show(BLUEF_WINDOW_NAME, ch3);
-     * */
+    cvSplit(img, ch1, ch2, ch3, NULL);
 
+    // Apply the filter bank on each
+    puts("Applying filters...");
+    printf("Source: %dx%d / %d\n", cvGetSize(ch1).height, cvGetSize(ch1).width, ch1->depth);
+    CvMat **flt_1 = malloc(filter_bank.size * sizeof(CvMat*));
+    apply_filter_bank(&filter_bank, ch1, flt_1);
+  
     cvWaitKey(0);
 
+    // Should do some cleanup here... :_(
+    
     return (EXIT_SUCCESS);
 }
 
