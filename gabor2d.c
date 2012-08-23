@@ -69,6 +69,7 @@ void generate_gabor_filter_bank(
             {
                 unsigned int bw = bandwidths[k];
                 bank->filters[f] = create_gabor_filter_2d(frq, bw, orn);
+                f++;
             }
         }
     }
@@ -89,7 +90,7 @@ void apply_filter_bank(
         CvMat *f = bank->filters[fidx];
         // applying it to the source matrix
         CvMat *out = cvCreateMat(source->rows, source->cols, source->type);
-        //cvFilter2D(source, out, f, cvPoint(-1, -1));
+        cvFilter2D(source, out, f, cvPoint(-1, -1));
         printf("Filter %d: %dx%d / %d\n", fidx, f->rows, f->cols, f->type);
         // and saving the result in the output array
         outputs[fidx] = out;

@@ -5,7 +5,7 @@
 #ifndef GABOR2D_H
 #define	GABOR2D_H
 
-#include <opencv2/core/core_c.h>
+#include <opencv/cv.h>
 
 #ifdef	__cplusplus
 extern "C" {
