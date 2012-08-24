@@ -33,12 +33,13 @@ extern "C" {
      */
     void generate_gabor_filter_bank(
             FilterBank *bank,
+            unsigned int n_bandwidths,
+            unsigned int *bandwidths,
             unsigned int n_freqs,
             float *spatial_frequencies,
             unsigned int n_orientations,
-            float *orientations,
-            unsigned int n_bandwidths,
-            unsigned int *bandwidths);
+            float *orientations
+            );
 
 
     /*

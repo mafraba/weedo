@@ -41,12 +41,13 @@ CvMat* create_gabor_filter_2d(float spatial_freq, unsigned int bandwidth, float 
  */
 void generate_gabor_filter_bank(
                                 FilterBank *bank,
+                                unsigned int n_bands,
+                                unsigned int *bandwidths,
                                 unsigned int n_freqs,
                                 float *spatial_frequencies,
                                 unsigned int n_orientations,
-                                float *orientations,
-                                unsigned int n_bands,
-                                unsigned int *bandwidths)
+                                float *orientations
+                                )
 {
     // Assuming 'bank' is pre-allocated
     bank->size = n_freqs * n_orientations * n_bands;
@@ -55,19 +56,19 @@ void generate_gabor_filter_bank(
     bank->filters = malloc(bank->size * sizeof (CvMat*));
 
     // Create filters, one by one...
-    // ... iterating on frequencies
     int f = 0;
-    for (int i = 0; i < n_freqs; i++)
+    // ...covering all bandwidths
+    for (int k = 0; k < n_bands; k++)
     {
-        float frq = spatial_frequencies[i];
-        // ...now for each frequency, iterating on orientations
-        for (int j = 0; j < n_orientations; j++)
+        unsigned int bw = bandwidths[k];
+        // ... then frequencies
+        for (int i = 0; i < n_freqs; i++)
         {
-            float orn = orientations[j];
-            // ...and finally on bandwidths
-            for (int k = 0; k < n_bands; k++)
+            float frq = spatial_frequencies[i];
+            // ...then orientations
+            for (int j = 0; j < n_orientations; j++)
             {
-                unsigned int bw = bandwidths[k];
+                float orn = orientations[j];
                 bank->filters[f] = create_gabor_filter_2d(frq, bw, orn);
                 f++;
             }
@@ -81,8 +82,6 @@ void apply_filter_bank(
                        CvMat **outputs
                        )
 {
-    printf("Source: %dx%d / %d\n", source->rows, source->cols, source->type);
-    
     // Iterate over the filters...
     for (int fidx = 0; fidx < bank->size; fidx++)
     {
@@ -91,7 +90,6 @@ void apply_filter_bank(
         // applying it to the source matrix
         CvMat *out = cvCreateMat(source->rows, source->cols, source->type);
         cvFilter2D(source, out, f, cvPoint(-1, -1));
-        printf("Filter %d: %dx%d / %d\n", fidx, f->rows, f->cols, f->type);
         // and saving the result in the output array
         outputs[fidx] = out;
     }
