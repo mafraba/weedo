@@ -88,7 +88,7 @@ void apply_filter_bank(
         // ...taking each one
         CvMat *f = bank->filters[fidx];
         // applying it to the source matrix
-        CvMat *out = cvCreateMat(source->rows, source->cols, source->type);
+        CvMat *out = cvCreateMat(source->rows, source->cols, CV_32FC1);
         cvFilter2D(source, out, f, cvPoint(-1, -1));
         // and saving the result in the output array
         outputs[fidx] = out;

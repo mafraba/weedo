@@ -68,12 +68,45 @@ void chromacity(CvMat* img)
         unsigned char r = round(red * 255.0 / total);
         unsigned char g = round(green * 255.0 / total);
         unsigned char b = round(blue * 255.0 / total);
-        
-        img->data.ptr[i+2] = r;
-        img->data.ptr[i+1] = g;
+
+        img->data.ptr[i + 2] = r;
+        img->data.ptr[i + 1] = g;
         img->data.ptr[i] = b;
     }
 
+}
+
+/* Takes N input matrices, then sorts that data into a single matrix
+ * where each row represents a pixel, with N columns corresponding to the value
+ * of that pixel in each one of the original matrices.
+ * 
+ * I.e., builds a sample vector from each pixel
+ */
+void sort_samples(unsigned int k, CvMat** images, CvMat** samples)
+{
+    // k is the number of images, i.e., the sample vector length
+    // n_samples is the number of pixels
+    unsigned int n_samples = images[0]->cols * images[0]->rows;
+    *samples = cvCreateMat(n_samples // rows
+                           , k // cols
+                           , CV_32FC1);
+
+    // each sample corresponds to a pixel, so for each row and column
+    int smp_idx = 0;
+    for (int row = 0; row < images[0]->rows; row++)
+    {
+        for (int col = 0; col < images[0]->cols; col++)
+        {
+            float *sample_ptr = (float*) ((*samples)->data.ptr + smp_idx * (*samples)->step);
+            // Now for each sample we have 'k' values, one from each image
+            for (int i = 0; i < k; i++)
+            {
+                *sample_ptr = CV_MAT_ELEM(*(images[i]), float, row, col);
+                sample_ptr++;
+            }
+            smp_idx++;
+        }
+    }
 }
 
 int main(int argc, char** argv)
@@ -101,11 +134,12 @@ int main(int argc, char** argv)
 
     // Apply the filter bank on each one of them
     puts("Applying filters...");
-    CvMat **red_flt = malloc(filter_bank.size * sizeof (CvMat*));
+    CvMat **results = (CvMat**) malloc(3 * filter_bank.size * sizeof (CvMat*));
+    CvMat **red_flt = results;
     apply_filter_bank(&filter_bank, ch1, red_flt);
-    CvMat **green_flt = malloc(filter_bank.size * sizeof (CvMat*));
+    CvMat **green_flt = results + filter_bank.size;
     apply_filter_bank(&filter_bank, ch2, green_flt);
-    CvMat **blue_flt = malloc(filter_bank.size * sizeof (CvMat*));
+    CvMat **blue_flt = results + 2 * filter_bank.size;
     apply_filter_bank(&filter_bank, ch3, blue_flt);
 
     // 
@@ -114,8 +148,14 @@ int main(int argc, char** argv)
     output_filtered_images("GREEN", filter_bank.size, green_flt);
     output_filtered_images("BLUE", filter_bank.size, blue_flt);
 
+    // Now sort the samples
+    CvMat *samples;
+    sort_samples(3*filter_bank.size, results, &samples);
+    printf("Samples: %d(x%d)", samples->rows, samples->cols);
+    
+    //
     cvWaitKey(0);
-
+    
     // Should do some cleanup here... :_(
 
     return (EXIT_SUCCESS);
