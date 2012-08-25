@@ -27,6 +27,8 @@ float spatial_frequencies[4] = {1, 2, 3, 4};
 
 void show(char* name, CvArr* img)
 {
+    printf("Displaying %s\n", name);
+    fflush(stdout);
     cvNamedWindow(name, CV_WINDOW_AUTOSIZE);
     cvShowImage(name, img);
 }
@@ -109,6 +111,18 @@ void sort_samples(unsigned int k, CvMat** images, CvMat** samples)
     }
 }
 
+void img_from_labels(CvMat* labels, CvMat* dst, CvScalar *color_tab)
+{
+    for (int row = 0; row < dst->rows; row++)
+    {
+        for (int col = 0; col < dst->cols; col++)
+        {
+            int i = CV_MAT_ELEM(*labels, int, row * dst->cols + col, 0);
+            cvSet2D(dst, row, col, color_tab[i]);
+        }
+    }
+}
+
 int main(int argc, char** argv)
 {
     // Load and display original image
@@ -142,20 +156,44 @@ int main(int argc, char** argv)
     CvMat **blue_flt = results + 2 * filter_bank.size;
     apply_filter_bank(&filter_bank, ch3, blue_flt);
 
-    // 
+    //
     puts("Outputting...");
     output_filtered_images("RED", filter_bank.size, red_flt);
     output_filtered_images("GREEN", filter_bank.size, green_flt);
     output_filtered_images("BLUE", filter_bank.size, blue_flt);
 
     // Now sort the samples
+    puts("Sorting...");
     CvMat *samples;
-    sort_samples(3*filter_bank.size, results, &samples);
+    sort_samples(3 * filter_bank.size, results, &samples);
     printf("Samples: %d(x%d)", samples->rows, samples->cols);
-    
+    fflush(stdout);
+
+    // And cluster them
+    printf("Clustering... ");
+
+    CvScalar color_tab[5];
+    color_tab[0] = CV_RGB(255, 0, 0);
+    color_tab[1] = CV_RGB(0, 255, 0);
+    color_tab[2] = CV_RGB(0, 0, 255);
+    color_tab[3] = CV_RGB(255, 0, 255);
+    color_tab[4] = CV_RGB(255, 255, 0);
+
+    CvMat *labels = cvCreateMat(samples->rows, 1, CV_32SC1);
+    cvKMeans2(samples, 3, labels,
+              cvTermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 10, 1.0),
+              10, NULL, NULL, NULL, NULL);
+    puts("done");
+    fflush(stdout);
     //
     cvWaitKey(0);
-    
+
+    CvMat *labeled_img = cvCreateMat(img->rows, img->cols, CV_8UC3);
+    img_from_labels(labels, labeled_img, color_tab);
+    show("Labels", labeled_img);
+    cvWaitKey(0);
+    cvWaitKey(0);
+    cvWaitKey(0);
     // Should do some cleanup here... :_(
 
     return (EXIT_SUCCESS);
