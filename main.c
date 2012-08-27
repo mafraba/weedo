@@ -17,13 +17,23 @@
 #define PATH "pics/PTOA0124.png"
 
 #define ORIGINAL_IMAGE_WINDOW_NAME "Original image"
+#define CHROMACITY_IMAGE_WINDOW_NAME "Chromacity"
 #define OUTPUT_PATH "/tmp/weedo"
 
-unsigned int bandwidths[1] = {8};
+// Bandwidths
+unsigned int bandwidths[1] = {4};
+
 // Orientations as recommended in [1]
-float orientations[6] = {0, PI / 6, 2 * PI / 6, 3 * PI / 6, 4 * PI / 6, 5 * PI / 6};
+#define N_ORIENTATIONS 6
+float orientations[6] = // {0, PI / 4, PI / 2, 3 * PI / 2}; 
+{0, PI / 6, 2 * PI / 6, 3 * PI / 6, 4 * PI / 6, 5 * PI / 6};
+
 // Spatial frequencies
-float spatial_frequencies[4] = {1, 2, 3, 4};
+#define N_FREQS 4
+float spatial_frequencies[5] = {1, 2, 3, 4, 5};
+
+// Number of clusters
+#define K_CLUSTERS 6
 
 void show(char* name, CvArr* img)
 {
@@ -36,9 +46,9 @@ void show(char* name, CvArr* img)
 void output_filtered_images(char *prefix, unsigned int n, CvArr** imgs)
 {
     int i = 0;
-    for (int frq = 0; frq < 4; frq++)
+    for (int frq = 0; frq < N_FREQS; frq++)
     {
-        for (int orn = 0; orn < 6; orn++)
+        for (int orn = 0; orn < N_ORIENTATIONS; orn++)
         {
             char out_file_name[256];
             sprintf(out_file_name, "%s/%s_%s_%02d_%02.2f_%02.2f.png",
@@ -128,16 +138,18 @@ int main(int argc, char** argv)
     // Load and display original image
     puts("Loading image...");
     CvMat* img = cvLoadImageM(PATH, CV_LOAD_IMAGE_COLOR);
-    chromacity(img);
-    show(ORIGINAL_IMAGE_WINDOW_NAME, img);
+    CvMat* orig = cvCloneMat(img);
+    //chromacity(img);
+    show(ORIGINAL_IMAGE_WINDOW_NAME, orig);
+    show(CHROMACITY_IMAGE_WINDOW_NAME, img);
 
     // Generate a Gabor filter bank
     puts("Generating Gabor filter bank...");
     FilterBank filter_bank;
     generate_gabor_filter_bank(&filter_bank,
                                1, bandwidths,
-                               4, spatial_frequencies,
-                               6, orientations);
+                               N_FREQS, spatial_frequencies,
+                               N_ORIENTATIONS, orientations);
 
     // Separate each channel
     puts("Separating channels...");
@@ -172,25 +184,30 @@ int main(int argc, char** argv)
     // And cluster them
     printf("Clustering... ");
 
-    CvScalar color_tab[5];
+    CvScalar color_tab[8];
     color_tab[0] = CV_RGB(255, 0, 0);
     color_tab[1] = CV_RGB(0, 255, 0);
     color_tab[2] = CV_RGB(0, 0, 255);
-    color_tab[3] = CV_RGB(255, 0, 255);
-    color_tab[4] = CV_RGB(255, 255, 0);
+    color_tab[3] = CV_RGB(0, 255, 255);
+    color_tab[4] = CV_RGB(255, 0, 255);
+    color_tab[5] = CV_RGB(255, 255, 0);
+    color_tab[6] = CV_RGB(255, 255, 255);
+    color_tab[7] = CV_RGB(0, 0, 0);
 
     CvMat *labels = cvCreateMat(samples->rows, 1, CV_32SC1);
-    cvKMeans2(samples, 3, labels,
+    cvKMeans2(samples, K_CLUSTERS, labels,
               cvTermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 10, 1.0),
               10, NULL, NULL, NULL, NULL);
     puts("done");
     fflush(stdout);
-    //
-    cvWaitKey(0);
 
     CvMat *labeled_img = cvCreateMat(img->rows, img->cols, CV_8UC3);
     img_from_labels(labels, labeled_img, color_tab);
     show("Labels", labeled_img);
+
+    CvMat *mix = cvClone(img);
+    cvAddWeighted(orig, 0.9, labeled_img, 0.1, 0,  mix);
+    show("Mix", mix);
     cvWaitKey(0);
     cvWaitKey(0);
     cvWaitKey(0);
