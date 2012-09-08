@@ -14,24 +14,25 @@
 #include <opencv/highgui.h>
 #include "gabor2d.h"
 
-#define PATH "pics/PTOA0216.png"
+#define PATH "pics/PTOA0128.png"
 
 #define ORIGINAL_IMAGE_WINDOW_NAME "Original image"
 #define CHROMACITY_IMAGE_WINDOW_NAME "Chromacity"
 #define OUTPUT_PATH "/tmp/weedo"
 
 // Bandwidths
-#define N_BANDWIDTHS 2
-unsigned int bandwidths[N_BANDWIDTHS] = {4, 8, 16};
+#define N_BANDWIDTHS 3
+unsigned int bandwidths[N_BANDWIDTHS] = {4, 8, 16, 32, 64};
 
 // Orientations as recommended in [1]
 #define N_ORIENTATIONS 4
-float orientations[N_ORIENTATIONS] = {0, PI / 4, PI / 2, 3 * PI / 4};
+float orientations[N_ORIENTATIONS] = 
+{0, PI / 4, PI / 2, 3 * PI / 4};
 //{0, PI / 6, 2 * PI / 6, 3 * PI / 6, 4 * PI / 6, 5 * PI / 6};
 
 // Spatial frequencies
-#define N_FREQS 3
-float spatial_frequencies[N_FREQS] = {1, 2, 3, 4};
+#define N_FREQS 1
+float spatial_frequencies[N_FREQS] = {4};
 
 // Number of clusters
 #define K_CLUSTERS 6

@@ -99,9 +99,15 @@ void apply_filter(GaborFilter *filter, CvMat *source, CvMat *output)
 
     // Now sum the squares to get the energy
     cvCartToPolar(out_r, out_i, output, NULL, 0);
-    
-//    cvCopy(out_r, output, NULL);
+    //    cvSetZero(output);
+    //    cvMultiplyAcc(out_r, out_r, output, NULL);
+    //    cvMultiplyAcc(out_i, out_i, output, NULL);
 
+    cvSmooth(output, output, CV_GAUSSIAN, 9, 0, 0, 0);
+    //cvSub(output, out_r, output, NULL);
+    
+    cvNormalize(output, output, 255, 0, CV_MINMAX, NULL);
+    
     cvRelease(&out_r);
     cvRelease(&out_i);
 }
@@ -119,7 +125,6 @@ void apply_filter_bank(
         // applying it to the source matrix
         CvMat *out = cvCreateMat(source->rows, source->cols, CV_32FC1);
         apply_filter(bank->filters[fidx], source, out);
-        // cvSmooth(out, out, CV_GAUSSIAN, 5, 0, 0, 0);
         // and saving the result in the output array
         outputs[fidx] = out;
     }
