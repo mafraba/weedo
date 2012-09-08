@@ -14,26 +14,27 @@
 #include <opencv/highgui.h>
 #include "gabor2d.h"
 
-#define PATH "pics/PTOA0124.png"
+#define PATH "pics/PTOA0128.png"
 
 #define ORIGINAL_IMAGE_WINDOW_NAME "Original image"
 #define CHROMACITY_IMAGE_WINDOW_NAME "Chromacity"
 #define OUTPUT_PATH "/tmp/weedo"
 
 // Bandwidths
-unsigned int bandwidths[1] = {4};
+#define N_BANDWIDTHS 2
+unsigned int bandwidths[N_BANDWIDTHS] = {8, 4};
 
 // Orientations as recommended in [1]
-#define N_ORIENTATIONS 6
-float orientations[6] = // {0, PI / 4, PI / 2, 3 * PI / 2}; 
-{0, PI / 6, 2 * PI / 6, 3 * PI / 6, 4 * PI / 6, 5 * PI / 6};
+#define N_ORIENTATIONS 4
+float orientations[N_ORIENTATIONS] = {0, PI / 4, PI / 2, 3 * PI / 4};
+//{0, PI / 6, 2 * PI / 6, 3 * PI / 6, 4 * PI / 6, 5 * PI / 6};
 
 // Spatial frequencies
-#define N_FREQS 4
-float spatial_frequencies[5] = {1, 2, 3, 4, 5};
+#define N_FREQS 3
+float spatial_frequencies[N_FREQS] = {1, 2, 3};
 
 // Number of clusters
-#define K_CLUSTERS 6
+#define K_CLUSTERS 4
 
 void show(char* name, CvArr* img)
 {
@@ -46,21 +47,24 @@ void show(char* name, CvArr* img)
 void output_filtered_images(char *prefix, unsigned int n, CvArr** imgs)
 {
     int i = 0;
-    for (int frq = 0; frq < N_FREQS; frq++)
+    for (int bw = 0; bw < N_BANDWIDTHS; bw++)
     {
-        for (int orn = 0; orn < N_ORIENTATIONS; orn++)
+        for (int frq = 0; frq < N_FREQS; frq++)
         {
-            char out_file_name[256];
-            sprintf(out_file_name, "%s/%s_%s_%02d_%02.2f_%02.2f.png",
-                    OUTPUT_PATH,
-                    prefix,
-                    "FLT",
-                    bandwidths[0],
-                    spatial_frequencies[frq],
-                    orientations[orn]);
-            puts(out_file_name);
-            cvSaveImage(out_file_name, imgs[i], NULL);
-            i++;
+            for (int orn = 0; orn < N_ORIENTATIONS; orn++)
+            {
+                char out_file_name[256];
+                sprintf(out_file_name, "%s/%s_%s_%02d_%02.2f_%02.2f.png",
+                        OUTPUT_PATH,
+                        prefix,
+                        "FLT",
+                        bandwidths[bw],
+                        spatial_frequencies[frq],
+                        orientations[orn]);
+                puts(out_file_name);
+                cvSaveImage(out_file_name, imgs[i], NULL);
+                i++;
+            }
         }
     }
 }
@@ -138,8 +142,10 @@ int main(int argc, char** argv)
     // Load and display original image
     puts("Loading image...");
     CvMat* img = cvLoadImageM(PATH, CV_LOAD_IMAGE_COLOR);
+    cvSmooth(img, img, CV_GAUSSIAN, 3, 0, 0, 0);
     CvMat* orig = cvCloneMat(img);
-    //chromacity(img);
+
+    chromacity(img);
     show(ORIGINAL_IMAGE_WINDOW_NAME, orig);
     show(CHROMACITY_IMAGE_WINDOW_NAME, img);
 
@@ -147,7 +153,7 @@ int main(int argc, char** argv)
     puts("Generating Gabor filter bank...");
     FilterBank filter_bank;
     generate_gabor_filter_bank(&filter_bank,
-                               1, bandwidths,
+                               N_BANDWIDTHS, bandwidths,
                                N_FREQS, spatial_frequencies,
                                N_ORIENTATIONS, orientations);
 
@@ -206,7 +212,7 @@ int main(int argc, char** argv)
     show("Labels", labeled_img);
 
     CvMat *mix = cvClone(img);
-    cvAddWeighted(orig, 0.9, labeled_img, 0.1, 0,  mix);
+    cvAddWeighted(orig, 0.9, labeled_img, 0.1, 0, mix);
     show("Mix", mix);
     cvWaitKey(0);
     cvWaitKey(0);
