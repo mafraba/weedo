@@ -14,15 +14,20 @@ extern "C" {
 #define PI		3.14159265358979323846	/* pi */
 
     typedef struct {
-        unsigned int size;
-        CvMat **filters;
-    } FilterBank;
+        CvMat *real;
+        CvMat *imag;
+    } GaborFilter;
 
+    typedef struct {
+        unsigned int size;
+        GaborFilter **filters;
+    } FilterBank;
+    
     /*
      * Creation of a particular filter with the parameters passed in 
      * as arguments
      */
-    CvMat* create_gabor_filter_2d(
+    GaborFilter* create_gabor_filter_2d(
             float spatial_freq,
             unsigned int bandwidth,
             float orientation);

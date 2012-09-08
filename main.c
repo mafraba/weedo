@@ -14,7 +14,7 @@
 #include <opencv/highgui.h>
 #include "gabor2d.h"
 
-#define PATH "pics/PTOA0128.png"
+#define PATH "pics/PTOA0216.png"
 
 #define ORIGINAL_IMAGE_WINDOW_NAME "Original image"
 #define CHROMACITY_IMAGE_WINDOW_NAME "Chromacity"
@@ -22,7 +22,7 @@
 
 // Bandwidths
 #define N_BANDWIDTHS 2
-unsigned int bandwidths[N_BANDWIDTHS] = {8, 4};
+unsigned int bandwidths[N_BANDWIDTHS] = {4, 8, 16};
 
 // Orientations as recommended in [1]
 #define N_ORIENTATIONS 4
@@ -31,10 +31,10 @@ float orientations[N_ORIENTATIONS] = {0, PI / 4, PI / 2, 3 * PI / 4};
 
 // Spatial frequencies
 #define N_FREQS 3
-float spatial_frequencies[N_FREQS] = {1, 2, 3};
+float spatial_frequencies[N_FREQS] = {1, 2, 3, 4};
 
 // Number of clusters
-#define K_CLUSTERS 4
+#define K_CLUSTERS 6
 
 void show(char* name, CvArr* img)
 {
@@ -142,7 +142,7 @@ int main(int argc, char** argv)
     // Load and display original image
     puts("Loading image...");
     CvMat* img = cvLoadImageM(PATH, CV_LOAD_IMAGE_COLOR);
-    cvSmooth(img, img, CV_GAUSSIAN, 3, 0, 0, 0);
+    //cvSmooth(img, img, CV_GAUSSIAN, 3, 0, 0, 0);
     CvMat* orig = cvCloneMat(img);
 
     chromacity(img);
@@ -212,7 +212,7 @@ int main(int argc, char** argv)
     show("Labels", labeled_img);
 
     CvMat *mix = cvClone(img);
-    cvAddWeighted(orig, 0.9, labeled_img, 0.1, 0, mix);
+    cvAddWeighted(orig, 0.7, labeled_img, 0.3, 0, mix);
     show("Mix", mix);
     cvWaitKey(0);
     cvWaitKey(0);
