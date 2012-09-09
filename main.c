@@ -21,18 +21,19 @@
 #define OUTPUT_PATH "/tmp/weedo"
 
 // Bandwidths
-#define N_BANDWIDTHS 3
+#define N_BANDWIDTHS 1
 unsigned int bandwidths[N_BANDWIDTHS] = {4, 8, 16, 32, 64};
 
 // Orientations as recommended in [1]
-#define N_ORIENTATIONS 4
-float orientations[N_ORIENTATIONS] = 
-{0, PI / 4, PI / 2, 3 * PI / 4};
-//{0, PI / 6, 2 * PI / 6, 3 * PI / 6, 4 * PI / 6, 5 * PI / 6};
+#define N_ORIENTATIONS 1
+float orientations[N_ORIENTATIONS] =
+        // {0, PI / 4, PI / 2, 3 * PI / 4};
+        //{0, PI / 6, 2 * PI / 6, 3 * PI / 6, 4 * PI / 6, 5 * PI / 6};
+{PI / 2};
 
 // Spatial frequencies
 #define N_FREQS 1
-float spatial_frequencies[N_FREQS] = {4};
+float spatial_frequencies[N_FREQS] = {2};
 
 // Number of clusters
 #define K_CLUSTERS 6
@@ -43,6 +44,26 @@ void show(char* name, CvArr* img)
     fflush(stdout);
     cvNamedWindow(name, CV_WINDOW_AUTOSIZE);
     cvShowImage(name, img);
+}
+
+void output_base_channels(CvMat *img)
+{
+    CvMat *ch1 = cvCreateMat(img->rows, img->cols, CV_8UC1);
+    CvMat *ch2 = cvCreateMat(img->rows, img->cols, CV_8UC1);
+    CvMat *ch3 = cvCreateMat(img->rows, img->cols, CV_8UC1);
+    cvSplit(img, ch1, ch2, ch3, NULL);
+    char out_file_name[256];
+    sprintf(out_file_name, "%s/%s.png", OUTPUT_PATH, "base");
+    cvSaveImage(out_file_name, img, NULL);
+    sprintf(out_file_name, "%s/%s.png", OUTPUT_PATH, "base_channel_1");
+    cvSaveImage(out_file_name, ch1, NULL);
+    sprintf(out_file_name, "%s/%s.png", OUTPUT_PATH, "base_channel_2");
+    cvSaveImage(out_file_name, ch2, NULL);
+    sprintf(out_file_name, "%s/%s.png", OUTPUT_PATH, "base_channel_3");
+    cvSaveImage(out_file_name, ch3, NULL);
+    cvRelease(&ch1);
+    cvRelease(&ch2);
+    cvRelease(&ch3);
 }
 
 void output_filtered_images(char *prefix, unsigned int n, CvArr** imgs)
@@ -143,10 +164,11 @@ int main(int argc, char** argv)
     // Load and display original image
     puts("Loading image...");
     CvMat* img = cvLoadImageM(PATH, CV_LOAD_IMAGE_COLOR);
+    cvCvtColor(img, img, CV_BGR2Lab);
     //cvSmooth(img, img, CV_GAUSSIAN, 3, 0, 0, 0);
     CvMat* orig = cvCloneMat(img);
 
-    chromacity(img);
+    //chromacity(img);
     show(ORIGINAL_IMAGE_WINDOW_NAME, orig);
     show(CHROMACITY_IMAGE_WINDOW_NAME, img);
 
@@ -168,29 +190,29 @@ int main(int argc, char** argv)
     // Apply the filter bank on each one of them
     puts("Applying filters...");
     CvMat **results = (CvMat**) malloc(3 * filter_bank.size * sizeof (CvMat*));
-    CvMat **red_flt = results;
-    apply_filter_bank(&filter_bank, ch1, red_flt);
-    CvMat **green_flt = results + filter_bank.size;
-    apply_filter_bank(&filter_bank, ch2, green_flt);
-    CvMat **blue_flt = results + 2 * filter_bank.size;
-    apply_filter_bank(&filter_bank, ch3, blue_flt);
+    CvMat **filtered_channel_1 = results;
+    apply_filter_bank(&filter_bank, ch1, filtered_channel_1);
+    CvMat **filtered_channel_2 = results + filter_bank.size;
+    apply_filter_bank(&filter_bank, ch2, filtered_channel_2);
+    CvMat **filtered_channel_3 = results + 2 * filter_bank.size;
+    apply_filter_bank(&filter_bank, ch3, filtered_channel_3);
 
     //
     puts("Outputting...");
-    output_filtered_images("RED", filter_bank.size, red_flt);
-    output_filtered_images("GREEN", filter_bank.size, green_flt);
-    output_filtered_images("BLUE", filter_bank.size, blue_flt);
+    output_base_channels(img);
+    output_filtered_images("CH1", filter_bank.size, filtered_channel_1);
+    output_filtered_images("CH2", filter_bank.size, filtered_channel_2);
+    output_filtered_images("CH3", filter_bank.size, filtered_channel_3);
 
     // Now sort the samples
     puts("Sorting...");
     CvMat *samples;
-    sort_samples(3 * filter_bank.size, results, &samples);
+    sort_samples(2 * filter_bank.size, filtered_channel_2, &samples);
     printf("Samples: %d(x%d)", samples->rows, samples->cols);
     fflush(stdout);
 
     // And cluster them
     printf("Clustering... ");
-
     CvScalar color_tab[8];
     color_tab[0] = CV_RGB(255, 0, 0);
     color_tab[1] = CV_RGB(0, 255, 0);
