@@ -17,23 +17,28 @@
 #define PATH "pics/PTOA0216.png"
 
 #define ORIGINAL_IMAGE_WINDOW_NAME "Original image"
-#define CHROMACITY_IMAGE_WINDOW_NAME "Chromacity"
+#define PRETREATED_IMAGE_WINDOW_NAME "Pretreated"
 #define OUTPUT_PATH "/tmp/weedo"
+
+// ---------- OPCIONES -------------------------
+// Eliminamos componente L (de espacio Lab) ?
+#define IGNORAR_L 1
+// Suavizamos imagen original?
+#define SMOOTH_ORIGINAL 9
 
 // Bandwidths
 #define N_BANDWIDTHS 3
 unsigned int bandwidths[N_BANDWIDTHS] = {4, 8, 16, 32, 64};
 
-// Orientations as recommended in [1]
+// Orientations
 #define N_ORIENTATIONS 4
-float orientations[N_ORIENTATIONS] =
-         {0, PI / 4, PI / 2, 3 * PI / 4};
-        //{0, PI / 6, 2 * PI / 6, 3 * PI / 6, 4 * PI / 6, 5 * PI / 6};
+float orientations[N_ORIENTATIONS] = {0, PI / 4, PI / 2, 3 * PI / 4};
+//{0, PI / 6, 2 * PI / 6, 3 * PI / 6, 4 * PI / 6, 5 * PI / 6};
 //{0, PI / 2};
 
 // Spatial frequencies
 #define N_FREQS 2
-float spatial_frequencies[N_FREQS] = {1,1.5};
+float spatial_frequencies[N_FREQS] = {1, 1.5};
 
 // Number of clusters
 #define K_CLUSTERS 8
@@ -193,11 +198,13 @@ int main(int argc, char** argv)
     CvMat* img = cvLoadImageM(PATH, CV_LOAD_IMAGE_COLOR);
     CvMat* orig = cvCloneMat(img);
     cvCvtColor(img, img, CV_BGR2Lab);
-    cvSmooth(img, img, CV_GAUSSIAN, 9, 0, 0, 0);    
+    if (SMOOTH_ORIGINAL)
+    {
+        cvSmooth(img, img, CV_GAUSSIAN, SMOOTH_ORIGINAL, 0, 0, 0);
+    }
 
-    //chromacity(img);
-    show(ORIGINAL_IMAGE_WINDOW_NAME, orig);
-    show(CHROMACITY_IMAGE_WINDOW_NAME, img);
+    //show(ORIGINAL_IMAGE_WINDOW_NAME, orig);
+    //show(PRETREATED_IMAGE_WINDOW_NAME, img);
 
     // Generate a Gabor filter bank
     puts("Generating Gabor filter bank...");
@@ -224,21 +231,12 @@ int main(int argc, char** argv)
     CvMat **filtered_channel_3 = results + 2 * filter_bank.size;
     apply_filter_bank(&filter_bank, ch3, filtered_channel_3);
 
-    //
-    puts("Outputting...");
-    char out_file_name[256];
-    sprintf(out_file_name, "%s/%s.png", OUTPUT_PATH, "original");
-    cvSaveImage(out_file_name, orig, NULL);
-    output_base_channels(img);
-    //output_filtered_images("CH1", filter_bank.size, filtered_channel_1);
-    output_filtered_images("CH2", filter_bank.size, filtered_channel_2);
-    output_filtered_images("CH3", filter_bank.size, filtered_channel_3);
-    output_filter_bank(&filter_bank);
-
     // Now sort the samples
     puts("Sorting...");
+    int n_channels = (IGNORAR_L ? 2 : 3);
+    results = (IGNORAR_L ? filtered_channel_2 : results);
     CvMat *samples;
-    sort_samples(2 * filter_bank.size, filtered_channel_2, &samples);
+    sort_samples(n_channels * filter_bank.size, results, &samples);
     printf("Samples: %d(x%d)", samples->rows, samples->cols);
     fflush(stdout);
 
@@ -263,14 +261,35 @@ int main(int argc, char** argv)
 
     CvMat *labeled_img = cvCreateMat(img->rows, img->cols, CV_8UC3);
     img_from_labels(labels, labeled_img, color_tab);
-    show("Labels", labeled_img);
+    //show("Labels", labeled_img);
 
     CvMat *mix = cvClone(img);
     cvAddWeighted(orig, 0.7, labeled_img, 0.3, 0, mix);
-    show("Mix", mix);
-    cvWaitKey(0);
-    cvWaitKey(0);
-    cvWaitKey(0);
+    
+    //
+    puts("Outputting...");
+    char out_file_name[256];
+    sprintf(out_file_name, "%s/%s.png", OUTPUT_PATH, "original");
+    cvSaveImage(out_file_name, orig, NULL);
+    output_base_channels(img);
+    if (!IGNORAR_L)
+    {
+        output_filtered_images("CH1", filter_bank.size, filtered_channel_1);
+    }
+    output_filtered_images("CH2", filter_bank.size, filtered_channel_2);
+    output_filtered_images("CH3", filter_bank.size, filtered_channel_3);
+    output_filter_bank(&filter_bank);
+    // output labels
+    sprintf(out_file_name, "%s/%s.png", OUTPUT_PATH, "labels");
+    cvSaveImage(out_file_name, labeled_img, NULL);
+    // output mix
+    sprintf(out_file_name, "%s/%s.png", OUTPUT_PATH, "mix");
+    cvSaveImage(out_file_name, mix, NULL);
+    
+    //show("Mix", mix);
+//    cvWaitKey(0);
+//    cvWaitKey(0);
+//    cvWaitKey(0);
     // Should do some cleanup here... :_(
 
     return (EXIT_SUCCESS);
