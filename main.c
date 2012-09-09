@@ -14,29 +14,29 @@
 #include <opencv/highgui.h>
 #include "gabor2d.h"
 
-#define PATH "pics/PTOA0128.png"
+#define PATH "pics/PTOA0216.png"
 
 #define ORIGINAL_IMAGE_WINDOW_NAME "Original image"
 #define CHROMACITY_IMAGE_WINDOW_NAME "Chromacity"
 #define OUTPUT_PATH "/tmp/weedo"
 
 // Bandwidths
-#define N_BANDWIDTHS 1
+#define N_BANDWIDTHS 3
 unsigned int bandwidths[N_BANDWIDTHS] = {4, 8, 16, 32, 64};
 
 // Orientations as recommended in [1]
-#define N_ORIENTATIONS 1
+#define N_ORIENTATIONS 4
 float orientations[N_ORIENTATIONS] =
-        // {0, PI / 4, PI / 2, 3 * PI / 4};
+         {0, PI / 4, PI / 2, 3 * PI / 4};
         //{0, PI / 6, 2 * PI / 6, 3 * PI / 6, 4 * PI / 6, 5 * PI / 6};
-{PI / 2};
+//{0, PI / 2};
 
 // Spatial frequencies
-#define N_FREQS 1
-float spatial_frequencies[N_FREQS] = {2};
+#define N_FREQS 2
+float spatial_frequencies[N_FREQS] = {1,1.5};
 
 // Number of clusters
-#define K_CLUSTERS 6
+#define K_CLUSTERS 8
 
 void show(char* name, CvArr* img)
 {
@@ -85,6 +85,33 @@ void output_filtered_images(char *prefix, unsigned int n, CvArr** imgs)
                         orientations[orn]);
                 puts(out_file_name);
                 cvSaveImage(out_file_name, imgs[i], NULL);
+                i++;
+            }
+        }
+    }
+}
+
+void output_filter_bank(FilterBank *fb)
+{
+    int i = 0;
+    for (int bw = 0; bw < N_BANDWIDTHS; bw++)
+    {
+        for (int frq = 0; frq < N_FREQS; frq++)
+        {
+            for (int orn = 0; orn < N_ORIENTATIONS; orn++)
+            {
+                char out_file_name[256];
+                sprintf(out_file_name, "%s/%s_%02d_%02.2f_%02.2f.png",
+                        OUTPUT_PATH,
+                        "FILTER",
+                        bandwidths[bw],
+                        spatial_frequencies[frq],
+                        orientations[orn]);
+                puts(out_file_name);
+                CvMat *out = cvClone(fb->filters[i]->real);
+                cvNormalize(out, out, 255, 0, CV_MINMAX, NULL);
+                cvSaveImage(out_file_name, out, NULL);
+                cvReleaseMat(&out);
                 i++;
             }
         }
@@ -164,9 +191,9 @@ int main(int argc, char** argv)
     // Load and display original image
     puts("Loading image...");
     CvMat* img = cvLoadImageM(PATH, CV_LOAD_IMAGE_COLOR);
-    cvCvtColor(img, img, CV_BGR2Lab);
-    //cvSmooth(img, img, CV_GAUSSIAN, 3, 0, 0, 0);
     CvMat* orig = cvCloneMat(img);
+    cvCvtColor(img, img, CV_BGR2Lab);
+    cvSmooth(img, img, CV_GAUSSIAN, 9, 0, 0, 0);    
 
     //chromacity(img);
     show(ORIGINAL_IMAGE_WINDOW_NAME, orig);
@@ -199,10 +226,14 @@ int main(int argc, char** argv)
 
     //
     puts("Outputting...");
+    char out_file_name[256];
+    sprintf(out_file_name, "%s/%s.png", OUTPUT_PATH, "original");
+    cvSaveImage(out_file_name, orig, NULL);
     output_base_channels(img);
-    output_filtered_images("CH1", filter_bank.size, filtered_channel_1);
+    //output_filtered_images("CH1", filter_bank.size, filtered_channel_1);
     output_filtered_images("CH2", filter_bank.size, filtered_channel_2);
     output_filtered_images("CH3", filter_bank.size, filtered_channel_3);
+    output_filter_bank(&filter_bank);
 
     // Now sort the samples
     puts("Sorting...");

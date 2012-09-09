@@ -37,7 +37,7 @@ GaborFilter* create_gabor_filter_2d(float spatial_freq, unsigned int bandwidth, 
         float* ptr2 = (float*) (mat2->data.ptr + row * mat2->step);
         for (int col = 0; col < mat1->cols; col++)
         {
-            float gaussian_component = gaussian(0.65f * bandwidth, row - bandwidth, col - bandwidth);
+            float gaussian_component = gaussian(0.5f * bandwidth, row - bandwidth, col - bandwidth);
             float sinusoid_component_r = sinusoid_real(spatial_freq / bandwidth, orientation, row - bandwidth, col - bandwidth);
             float sinusoid_component_i = sinusoid_imag(spatial_freq / bandwidth, orientation, row - bandwidth, col - bandwidth);
             *ptr1 = gaussian_component * sinusoid_component_r;
@@ -98,6 +98,7 @@ void apply_filter(GaborFilter *filter, CvMat *source, CvMat *output)
     cvFilter2D(source, out_i, filter->imag, cvPoint(-1, -1));
 
     // Now sum the squares to get the energy
+    // ( Leverage magnutude from cartToPolar = sqrt(x²+y²) )
     cvCartToPolar(out_r, out_i, output, NULL, 0);
     //    cvSetZero(output);
     //    cvMultiplyAcc(out_r, out_r, output, NULL);
