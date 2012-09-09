@@ -14,7 +14,7 @@
 #include <opencv/highgui.h>
 #include "gabor2d.h"
 
-#define PATH "pics/PTOA0216.png"
+#define PATH "pics/PTOA0204.png"
 
 #define ORIGINAL_IMAGE_WINDOW_NAME "Original image"
 #define PRETREATED_IMAGE_WINDOW_NAME "Pretreated"
@@ -28,7 +28,7 @@
 
 // Bandwidths
 #define N_BANDWIDTHS 3
-unsigned int bandwidths[N_BANDWIDTHS] = {4, 8, 16, 32, 64};
+unsigned int bandwidths[N_BANDWIDTHS] = {4, 8, 16};
 
 // Orientations
 #define N_ORIENTATIONS 4
@@ -49,6 +49,7 @@ void show(char* name, CvArr* img)
     fflush(stdout);
     cvNamedWindow(name, CV_WINDOW_AUTOSIZE);
     cvShowImage(name, img);
+    cvWaitKey(0);
 }
 
 void output_base_channels(CvMat *img)
@@ -66,12 +67,12 @@ void output_base_channels(CvMat *img)
     cvSaveImage(out_file_name, ch2, NULL);
     sprintf(out_file_name, "%s/%s.png", OUTPUT_PATH, "base_channel_3");
     cvSaveImage(out_file_name, ch3, NULL);
-    cvRelease(&ch1);
-    cvRelease(&ch2);
-    cvRelease(&ch3);
+    cvReleaseMat(&ch1);
+    cvReleaseMat(&ch2);
+    cvReleaseMat(&ch3);
 }
 
-void output_filtered_images(char *prefix, unsigned int n, CvArr** imgs)
+void output_filtered_images(char *prefix, unsigned int n, CvMat** imgs)
 {
     int i = 0;
     for (int bw = 0; bw < N_BANDWIDTHS; bw++)
@@ -179,15 +180,30 @@ void sort_samples(unsigned int k, CvMat** images, CvMat** samples)
     }
 }
 
-void img_from_labels(CvMat* labels, CvMat* dst, CvScalar *color_tab)
+void img_from_labels(CvMat* labels, CvMat **classes, CvMat* color_dst, CvScalar *color_tab)
 {
-    for (int row = 0; row < dst->rows; row++)
+    for (int row = 0; row < color_dst->rows; row++)
     {
-        for (int col = 0; col < dst->cols; col++)
+        for (int col = 0; col < color_dst->cols; col++)
         {
-            int i = CV_MAT_ELEM(*labels, int, row * dst->cols + col, 0);
-            cvSet2D(dst, row, col, color_tab[i]);
+            int i = CV_MAT_ELEM(*labels, int, row * color_dst->cols + col, 0);
+            cvSet2D(color_dst, row, col, color_tab[i]);
+            cvSet2D(classes[i], row, col, cvRealScalar(255));
         }
+    }
+}
+
+void output_classes(CvMat **classes, CvMat *orig)
+{
+    char file[256];
+    for (int i = 0; i < K_CLUSTERS; i++)
+    {
+        CvMat *masked = cvClone(orig);
+        cvZero(masked);
+        cvCopy(orig, masked, classes[i]);
+        sprintf(file, "%s/%s_%d.png", OUTPUT_PATH, "class", i);
+        cvSaveImage(file, masked, NULL);
+        cvReleaseMat(&masked);
     }
 }
 
@@ -255,17 +271,23 @@ int main(int argc, char** argv)
     CvMat *labels = cvCreateMat(samples->rows, 1, CV_32SC1);
     cvKMeans2(samples, K_CLUSTERS, labels,
               cvTermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 10, 1.0),
-              10, NULL, NULL, NULL, NULL);
+              10, NULL, 0, NULL, NULL);
     puts("done");
     fflush(stdout);
 
-    CvMat *labeled_img = cvCreateMat(img->rows, img->cols, CV_8UC3);
-    img_from_labels(labels, labeled_img, color_tab);
+    CvMat *color_labels = cvCreateMat(img->rows, img->cols, CV_8UC3);
+    CvMat **classes = malloc(K_CLUSTERS * sizeof (CvMat*));
+    for (int i = 0; i < K_CLUSTERS; i++)
+    {
+        classes[i] = cvCreateMat(img->rows, img->cols, CV_8UC1);
+        cvZero(classes[i]);
+    }
+    img_from_labels(labels, classes, color_labels, color_tab);
     //show("Labels", labeled_img);
 
     CvMat *mix = cvClone(img);
-    cvAddWeighted(orig, 0.7, labeled_img, 0.3, 0, mix);
-    
+    cvAddWeighted(orig, 0.7, color_labels, 0.3, 0, mix);
+
     //
     puts("Outputting...");
     char out_file_name[256];
@@ -280,16 +302,15 @@ int main(int argc, char** argv)
     output_filtered_images("CH3", filter_bank.size, filtered_channel_3);
     output_filter_bank(&filter_bank);
     // output labels
-    sprintf(out_file_name, "%s/%s.png", OUTPUT_PATH, "labels");
-    cvSaveImage(out_file_name, labeled_img, NULL);
+    output_classes(classes, orig);
     // output mix
     sprintf(out_file_name, "%s/%s.png", OUTPUT_PATH, "mix");
     cvSaveImage(out_file_name, mix, NULL);
-    
+
     //show("Mix", mix);
-//    cvWaitKey(0);
-//    cvWaitKey(0);
-//    cvWaitKey(0);
+    //    cvWaitKey(0);
+    //    cvWaitKey(0);
+    //    cvWaitKey(0);
     // Should do some cleanup here... :_(
 
     return (EXIT_SUCCESS);
