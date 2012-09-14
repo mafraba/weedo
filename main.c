@@ -14,7 +14,7 @@
 #include <opencv/highgui.h>
 #include "gabor2d.h"
 
-#define PATH "pics/PTOA0204.png"
+#define PATH "pics/05020068.JPG"
 
 #define ORIGINAL_IMAGE_WINDOW_NAME "Original image"
 #define PRETREATED_IMAGE_WINDOW_NAME "Pretreated"
@@ -24,7 +24,7 @@
 // Eliminamos componente L (de espacio Lab) ?
 #define IGNORAR_L 1
 // Suavizamos imagen original?
-#define SMOOTH_ORIGINAL 9
+#define SMOOTH_ORIGINAL 0
 
 // Bandwidths
 #define N_BANDWIDTHS 3
@@ -41,7 +41,7 @@ float orientations[N_ORIENTATIONS] = {0, PI / 4, PI / 2, 3 * PI / 4};
 float spatial_frequencies[N_FREQS] = {1, 1.5};
 
 // Number of clusters
-#define K_CLUSTERS 8
+#define K_CLUSTERS 4
 
 void show(char* name, CvArr* img)
 {
