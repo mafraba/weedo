@@ -24,7 +24,7 @@
 // Eliminamos componente L (de espacio Lab) ?
 #define IGNORAR_L 1
 // Suavizamos imagen original?
-#define SMOOTH_ORIGINAL 0
+#define SMOOTH_ORIGINAL 3
 
 // Bandwidths
 #define N_BANDWIDTHS 3
@@ -41,7 +41,7 @@ float orientations[N_ORIENTATIONS] = {0, PI / 4, PI / 2, 3 * PI / 4};
 float spatial_frequencies[N_FREQS] = {1, 1.5};
 
 // Number of clusters
-#define K_CLUSTERS 4
+#define K_CLUSTERS 3
 
 void show(char* name, CvArr* img)
 {
@@ -218,6 +218,8 @@ int main(int argc, char** argv)
     {
         cvSmooth(img, img, CV_GAUSSIAN, SMOOTH_ORIGINAL, 0, 0, 0);
     }
+    
+    //chromacity(img);
 
     //show(ORIGINAL_IMAGE_WINDOW_NAME, orig);
     //show(PRETREATED_IMAGE_WINDOW_NAME, img);
@@ -303,7 +305,9 @@ int main(int argc, char** argv)
     output_filter_bank(&filter_bank);
     // output labels
     output_classes(classes, orig);
-    // output mix
+    // output colored and mix
+    sprintf(out_file_name, "%s/%s.png", OUTPUT_PATH, "coloured");
+    cvSaveImage(out_file_name, color_labels, NULL);
     sprintf(out_file_name, "%s/%s.png", OUTPUT_PATH, "mix");
     cvSaveImage(out_file_name, mix, NULL);
 
